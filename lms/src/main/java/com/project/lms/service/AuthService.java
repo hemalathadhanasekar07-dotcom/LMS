@@ -2,9 +2,11 @@ package com.project.lms.service;
 
 import com.project.lms.dto.LoginRequestDTO;
 import com.project.lms.dto.RegisterRequestDTO;
+import com.project.lms.dto.UserResponseDTO;
 import com.project.lms.entity.*;
 import com.project.lms.exception.DuplicateResourceException;
 import com.project.lms.repository.*;
+import com.project.lms.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +23,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
-
+    private final JwtService jwtService;
     public Map<String, Object> register(RegisterRequestDTO request) {
 
         log.info("Register request received for email: {}", request.getEmail());
@@ -86,13 +88,30 @@ public class AuthService {
                     "code", "ACCOUNT_PENDING"
             );
         }
+        if (user.getStatus() == UserStatus.REJECTED) {
+            return Map.of(
+                    "message", "Your account has been rejected. Please contact administrator.",
+                    "code", "ACCOUNT_REJECTED"
+            );
+        }
 
         log.info("Login successful for user id: {}", user.getId());
 
+        String token = jwtService.generateToken(user);
+
         return Map.of(
-                "message", "Login successful",
-                "id", user.getId(),
-                "role", user.getRole().getName()
+                "token", token,
+                "user", UserResponseDTO.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .role(user.getRole().getName())
+                        .organizationId(user.getOrganization().getId())
+                        .status(user.getStatus().name())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .build()
         );
     }
 }
