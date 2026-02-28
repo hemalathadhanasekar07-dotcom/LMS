@@ -1,43 +1,49 @@
 package com.project.lms.controller;
 
-import com.project.lms.entity.Organization;
-import com.project.lms.repository.OrganizationRepository;
-import jakarta.validation.Valid;
+import com.project.lms.dto.OrganizationDTO;
+import com.project.lms.exception.UnauthorizedActionException;
+import com.project.lms.service.OrganizationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/organizations")
 @Slf4j
 public class OrganizationController {
 
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationService organizationService;
 
-    public OrganizationController(OrganizationRepository organizationRepository) {
-        this.organizationRepository = organizationRepository;
+    public OrganizationController(OrganizationService organizationService) {
+        this.organizationService = organizationService;
     }
 
     @GetMapping
-    public List<Organization> getAllOrganizations() {
+    public List<OrganizationDTO> getAllOrganizations() {
         log.info("GET /api/organizations called");
 
-        List<Organization> organizations = organizationRepository.findAll();
+        List<OrganizationDTO> organizations = organizationService.getAllOrganizations();
 
         log.info("Found {} organizations", organizations.size());
         return organizations;
     }
 
     @PostMapping
-    public ResponseEntity<Organization> createOrganization(@Valid @RequestBody Organization organization) {
-        log.info("POST /api/organizations called with payload: {}", organization);
+    public ResponseEntity<?> createOrganization(@RequestBody OrganizationDTO dto) throws UnauthorizedActionException {
+        log.info("POST /api/organizations called with payload: {}", dto);
 
-        Organization saved = organizationRepository.save(organization);
+        OrganizationDTO saved = organizationService.createOrganization(dto);
 
         log.info("Organization created with id={}", saved.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                Map.of(
+                        "message","Organization created successfully",
+                        "organizationid",saved.getId()
+                )
+        );
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
@@ -24,25 +25,22 @@ public class JwtService {
 
     @PostConstruct
     public void init() {
-        signingKey = Keys.hmacShaKeyFor(secret.getBytes());
-        System.out.println("JWT SECRET LOADED");
+        signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // ✅ Generate Token
+
     public String generateToken(User user) {
 
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claim("id", user.getId())
                 .claim("role", user.getRole().getName())
-                .claim("organizationId", user.getOrganization().getId())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(signingKey)   // No algorithm needed in 0.12.x
+                .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
     }
 
-    // ✅ Extract All Claims
+
     public Claims extractAllClaims(String token) {
 
         return Jwts.parser()

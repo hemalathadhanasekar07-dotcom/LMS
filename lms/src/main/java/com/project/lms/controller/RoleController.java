@@ -1,7 +1,6 @@
 package com.project.lms.controller;
 
-import com.project.lms.dto.RoleRequestDTO;
-import com.project.lms.dto.RoleResponseDTO;
+import com.project.lms.dto.RoleDTO;
 import com.project.lms.service.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,21 +21,21 @@ public class RoleController {
     private final RoleService roleService;
 
     @GetMapping
-    public ResponseEntity<List<RoleResponseDTO>> listRoles() {
+    public ResponseEntity<List<RoleDTO>> listRoles() {
 
         log.info("GET /api/roles called");
 
-        List<RoleResponseDTO> roles = roleService.getAllRoles();
+        List<RoleDTO> roles = roleService.getAllRoles();
 
         return ResponseEntity.ok(roles);
     }
     @PostMapping
-    public ResponseEntity<RoleResponseDTO> createRole(
-            @Valid @RequestBody RoleRequestDTO request) {
+    public ResponseEntity<RoleDTO> createRole(
+            @Valid @RequestBody RoleDTO request) {
 
         log.info("POST /api/roles called");
 
-        RoleResponseDTO response = roleService.createRole(request);
+        RoleDTO response = roleService.createRole(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

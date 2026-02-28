@@ -32,10 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // If no token → continue filter chain
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-            return;
+            return ;
         }
 
         String token = authHeader.substring(7);
+       System.out.println("Request: " + request.getMethod() + " " + request.getRequestURI());
+        System.out.println("Authorization Header: " + request.getHeader("Authorization"));
 
         try {
 
@@ -44,22 +46,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = claims.getSubject();
             String role = claims.get("role", String.class);
 
-            // Prevent overriding existing authentication
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            UsernamePasswordAuthenticationToken authentication =
+                    UsernamePasswordAuthenticationToken.authenticated(
+                            email,
+                            null,
+                            Collections.singleton(
+                                    new SimpleGrantedAuthority("ROLE_" + role)
+                            )
+                    );
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
 
         } catch (Exception e) {
             // Invalid token → do nothing, Spring will handle 401
@@ -67,4 +65,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 }

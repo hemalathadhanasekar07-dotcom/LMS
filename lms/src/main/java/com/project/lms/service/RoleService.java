@@ -1,61 +1,64 @@
 package com.project.lms.service;
 
-import com.project.lms.dto.RoleRequestDTO;
-import com.project.lms.dto.RoleResponseDTO;
+import com.project.lms.dto.RoleDTO;
 import com.project.lms.entity.Role;
 import com.project.lms.exception.DuplicateResourceException;
 import com.project.lms.repository.RoleRepository;
-import lombok.Builder;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Builder
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class RoleService {
 
     private final RoleRepository roleRepository;
 
-    public RoleResponseDTO createRole(RoleRequestDTO request) {
+    // Constructor injection (same style as OrganizationService)
+    public RoleService(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
 
-        log.info("Creating new role: {}", request.getName());
+
+
+    private Role dtoToEntity(RoleDTO dto) {
+        Role role = new Role();
+        role.setId(dto.getId());
+        role.setName(dto.getName());
+        return role;
+    }
+
+    private RoleDTO entityToDto(Role role) {
+        RoleDTO dto = new RoleDTO();
+        dto.setId(role.getId());
+        dto.setName(role.getName());
+        dto.setCreatedAt(role.getCreatedAt());
+        dto.setUpdatedAt(role.getUpdatedAt());
+        return dto;
+    }
+
+
+
+    public RoleDTO createRole(RoleDTO request) {
 
         if (roleRepository.findByName(request.getName()).isPresent()) {
-            log.warn("Role already exists: {}", request.getName());
-            throw new DuplicateResourceException("Role already exists");
+            throw new DuplicateResourceException("ROLE_ALREADY_EXISTS");
         }
 
-        Role role = Role.builder()
-                .name(request.getName().toUpperCase())
-                .build();
+        Role role = dtoToEntity(request);
+        role.setName(role.getName().toUpperCase());
 
-        roleRepository.save(role);
+        Role saved = roleRepository.save(role);
 
-        log.info("Role created successfully with id: {}", role.getId());
-
-        return RoleResponseDTO.builder()
-                .id(role.getId())
-                .name(role.getName())
-                .createdAt(role.getCreatedAt())
-                .updatedAt(role.getUpdatedAt())
-                .build();
+        return entityToDto(saved);
     }
-    public List<RoleResponseDTO> getAllRoles() {
 
-        log.info("Fetching all roles");
+
+
+    public List<RoleDTO> getAllRoles() {
 
         return roleRepository.findAll()
                 .stream()
-                .map(role -> RoleResponseDTO.builder()
-                        .id(role.getId())
-                        .name(role.getName())
-                        .createdAt(role.getCreatedAt())
-                        .updatedAt(role.getUpdatedAt())
-                        .build())
+                .map(this::entityToDto)
                 .toList();
     }
 }

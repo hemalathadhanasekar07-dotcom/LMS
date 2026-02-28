@@ -18,11 +18,10 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Organization code is required")
+
     @Column(nullable = false, unique = true)
     private String code;
 
-    @NotBlank(message = "Organization name is required")
     @Column(nullable = false)
     private String name;
 

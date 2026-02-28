@@ -1,7 +1,7 @@
 package com.project.lms.controller;
 
 import com.project.lms.dto.LoginRequestDTO;
-import com.project.lms.dto.RegisterRequestDTO;
+import com.project.lms.dto.RegisterDTO;
 import com.project.lms.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(
-            @Valid @RequestBody RegisterRequestDTO request) {
+            @Valid @RequestBody RegisterDTO request) {
 
         log.info("POST /api/auth/register called");
 

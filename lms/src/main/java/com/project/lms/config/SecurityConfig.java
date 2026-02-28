@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
@@ -30,32 +32,33 @@ public class SecurityConfig {
                 .sessionManagement(sess ->
                         sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .exceptionHandling(ex -> ex
+                .exceptionHandling(eh -> eh
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write("{\"message\": \"Access Denied\"}");
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Forbidden\"}");
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
 
                         // Public
                         .requestMatchers("/api/auth/**").permitAll()
-
+                        .requestMatchers(HttpMethod.POST,"/api/organizations").authenticated()
                         // Admin only
-                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
-                        .requestMatchers("/api/users/*/approve").hasRole("ADMIN")
-                        .requestMatchers("/api/users/*/reject").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users").authenticated()
+                        .requestMatchers("/api/users/*/approve").authenticated()
+                        .requestMatchers("/api/users/*/reject").authenticated()
 
 
                         .requestMatchers(HttpMethod.GET, "/api/users")
-                        .hasRole("ADMIN")
+                        .authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/export")
-                        .hasRole("ADMIN")
+                        .authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/users/import")
-                        .hasRole("ADMIN")
+                        .authenticated()
                         .requestMatchers("/api/users/*/reject")
-                        .hasRole("ADMIN")
+                        .authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/*")
                         .authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/courses")
@@ -94,6 +97,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 }

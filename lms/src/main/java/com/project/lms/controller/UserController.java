@@ -1,4 +1,3 @@
-
 package com.project.lms.controller;
 
 import com.project.lms.dto.AddUserRequestDTO;
@@ -25,56 +24,91 @@ public class UserController {
 
     private final UserService userService;
 
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long id) {
-
-        log.info("PUT /api/users/{}/approve called", id);
-
-        return ResponseEntity.ok(userService.approveUser(id));
-    }
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<Map<String, Object>> rejectUser(@PathVariable Long id) {
-
-        log.info("PUT /api/users/{}/reject called", id);
-
-        return ResponseEntity.ok(userService.rejectUser(id));
-    }
-    @GetMapping
-    public ResponseEntity<List<UserListResponseDTO>> listUsers() {
-
-        log.info("GET /api/users called");
-
-        return ResponseEntity.ok(userService.listUsers());
-    }
-    @GetMapping("/{id}")
-    public ResponseEntity<UserListResponseDTO> getUserById(@PathVariable Long id) {
-
-        String currentUserEmail = SecurityContextHolder
+    // =========================================================
+    // GET CURRENT USER EMAIL
+    // =========================================================
+    private String getCurrentUserEmail() {
+        return SecurityContextHolder
                 .getContext()
                 .getAuthentication()
                 .getName();
-
-        return ResponseEntity.ok(userService.getUserById(id, currentUserEmail));
     }
+
+    // =========================================================
+    // APPROVE USER
+    // =========================================================
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                userService.approveUser(id, getCurrentUserEmail())
+        );
+    }
+
+    // =========================================================
+    // REJECT USER
+    // =========================================================
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<Map<String, Object>> rejectUser(@PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                userService.rejectUser(id, getCurrentUserEmail())
+        );
+    }
+
+    // =========================================================
+    // LIST USERS (ADMIN ONLY)
+    // =========================================================
+    @GetMapping
+    public ResponseEntity<List<UserListResponseDTO>> listUsers() {
+
+        return ResponseEntity.ok(
+                userService.listUsers(getCurrentUserEmail())
+        );
+    }
+
+    // =========================================================
+    // GET USER BY ID
+    // =========================================================
+    @GetMapping("/{id}")
+    public ResponseEntity<UserListResponseDTO> getUserById(@PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                userService.getUserById(id, getCurrentUserEmail())
+        );
+    }
+
+    // =========================================================
+    // ADD USER (ADMIN ONLY)
+    // =========================================================
     @PostMapping
     public ResponseEntity<UserListResponseDTO> addUser(
             @Valid @RequestBody AddUserRequestDTO request) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.addUser(request));
+                .body(userService.addUser(request, getCurrentUserEmail()));
     }
+
+    // =========================================================
+    // EXPORT USERS (ADMIN ONLY)
+    // =========================================================
     @GetMapping("/export")
     public ResponseEntity<List<UserExportDTO>> exportUsers() {
 
-        List<UserExportDTO> users = userService.exportUsers();
-
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(
+                userService.exportUsers(getCurrentUserEmail())
+        );
     }
+
+    // =========================================================
+    // IMPORT USERS (ADMIN ONLY)
+    // =========================================================
     @PostMapping("/import")
     public ResponseEntity<?> importUsers(
             @RequestBody List<UserImportDTO> importList) {
 
-        return ResponseEntity.ok(userService.importUsers(importList));
+        return ResponseEntity.ok(
+                userService.importUsers(importList, getCurrentUserEmail())
+        );
     }
-
 }

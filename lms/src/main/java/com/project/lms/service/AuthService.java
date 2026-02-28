@@ -1,10 +1,15 @@
 package com.project.lms.service;
 
-import com.project.lms.dto.LoginRequestDTO;
-import com.project.lms.dto.RegisterRequestDTO;
-import com.project.lms.dto.UserResponseDTO;
-import com.project.lms.entity.*;
+import com.project.lms.dto.*;
+
+import com.project.lms.entity.Organization;
+import com.project.lms.entity.Role;
+import com.project.lms.entity.User;
+import com.project.lms.entity.UserStatus;
+import com.project.lms.exception.AccountStatusException;
 import com.project.lms.exception.DuplicateResourceException;
+import com.project.lms.exception.InvalidCredentialsException;
+import com.project.lms.exception.ResourceNotFoundException;
 import com.project.lms.repository.*;
 import com.project.lms.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -24,30 +29,26 @@ public class AuthService {
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    public Map<String, Object> register(RegisterRequestDTO request) {
 
-        log.info("Register request received for email: {}", request.getEmail());
 
-        // Check if email already exists
+
+    public Map<String, Object> register(RegisterDTO request) {
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            log.warn("Email already exists: {}", request.getEmail());
-            throw new DuplicateResourceException("Email already exists");
+            throw new DuplicateResourceException("EMAIL_ALREADY_EXISTS");
         }
 
-        // Fetch USER role
         Role role = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("USER role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_ROLE_NOT_FOUND"));
 
-        // Fetch organization
         Organization organization = organizationRepository
                 .findById(request.getOrganizationId())
-                .orElseThrow(() -> new RuntimeException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("ORG_NOT_FOUND"));
 
-        // Build user
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
-                .username(request.getEmail()) // username same as email
+                .username(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(role)
                 .organization(organization)
@@ -56,62 +57,49 @@ public class AuthService {
 
         userRepository.save(user);
 
-        log.info("User registered successfully with id: {}", user.getId());
-
         return Map.of(
-                "message", "Registration successful. Your account is pending approval by an administrator.",
+                "message", "REGISTRATION_SUCCESS",
                 "id", user.getId()
         );
     }
+
+
+
     public Map<String, Object> login(LoginRequestDTO request) {
 
-        log.info("Login attempt for email: {}", request.getEmail());
-
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new InvalidCredentialsException("INVALID_CREDENTIALS"));
 
-        // Check organization match
         if (!user.getOrganization().getId().equals(request.getOrganizationId())) {
-            throw new RuntimeException("Invalid organization");
+            throw new InvalidCredentialsException("INVALID_ORGANIZATION");
         }
 
-        // Check password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            log.warn("Invalid password for email: {}", request.getEmail());
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("INVALID_CREDENTIALS");
         }
 
-        // If user still pending
         if (user.getStatus() == UserStatus.PENDING) {
-            return Map.of(
-                    "message", "Your account is pending approval. Please contact the administrator.",
-                    "code", "ACCOUNT_PENDING"
-            );
-        }
-        if (user.getStatus() == UserStatus.REJECTED) {
-            return Map.of(
-                    "message", "Your account has been rejected. Please contact administrator.",
-                    "code", "ACCOUNT_REJECTED"
-            );
+            throw new AccountStatusException("ACCOUNT_PENDING", "ACCOUNT_PENDING");
         }
 
-        log.info("Login successful for user id: {}", user.getId());
+        if (user.getStatus() == UserStatus.REJECTED) {
+            throw new AccountStatusException("ACCOUNT_REJECTED", "ACCOUNT_REJECTED");
+        }
 
         String token = jwtService.generateToken(user);
 
+        UserResponseDTO responseDTO = UserResponseDTO.builder()
+                .id(user.getId())
+                .userName(user.getUsername())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().getName())
+                .organizationId(user.getOrganization().getId())
+                .build();
+
         return Map.of(
                 "token", token,
-                "user", UserResponseDTO.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        .role(user.getRole().getName())
-                        .organizationId(user.getOrganization().getId())
-                        .status(user.getStatus().name())
-                        .createdAt(user.getCreatedAt())
-                        .updatedAt(user.getUpdatedAt())
-                        .build()
+                "user", responseDTO
         );
     }
 }
