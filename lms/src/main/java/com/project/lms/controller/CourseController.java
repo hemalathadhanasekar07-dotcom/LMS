@@ -4,8 +4,11 @@ import com.project.lms.dto.AddCourseDTO;
 import com.project.lms.service.CourseService;
 import com.project.lms.service.ModuleService;
 import com.project.lms.service.TopicService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,8 +22,10 @@ public class CourseController {
     private final ModuleService moduleService;
     private final TopicService topicService;
 
+
+
     @PostMapping
-    public ResponseEntity<?> addCourse(@RequestBody AddCourseDTO dto) {
+    public ResponseEntity<?> addCourse(@Valid @RequestBody AddCourseDTO dto) {
         return ResponseEntity.ok(courseService.addCourse(dto));
     }
 

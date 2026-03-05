@@ -30,9 +30,7 @@ public class UserService {
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // =========================================================
-    // COMMON METHODS
-    // =========================================================
+
 
     private User getCurrentUser(String email) {
         return userRepository.findByEmail(email)
@@ -69,9 +67,7 @@ public class UserService {
                 .build();
     }
 
-    // =========================================================
-    // ADD USER (ADMIN ONLY)
-    // =========================================================
+
     public UserListResponseDTO addUser(AddUserRequestDTO request, String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);
@@ -96,9 +92,7 @@ public class UserService {
         return entityToDto(saved);
     }
 
-    // =========================================================
-    // APPROVE USER (ADMIN ONLY)
-    // =========================================================
+
     public Map<String, Object> approveUser(Long id, String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);
@@ -120,9 +114,7 @@ public class UserService {
         );
     }
 
-    // =========================================================
-    // REJECT USER (ADMIN ONLY)
-    // =========================================================
+
     public Map<String, Object> rejectUser(Long id, String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);
@@ -148,9 +140,7 @@ public class UserService {
         );
     }
 
-    // =========================================================
-    // LIST USERS (ADMIN ONLY)
-    // =========================================================
+
     public List<UserListResponseDTO> listUsers(String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);
@@ -162,9 +152,7 @@ public class UserService {
                 .toList();
     }
 
-    // =========================================================
-    // GET USER BY ID (ADMIN OR SELF)
-    // =========================================================
+
     public UserListResponseDTO getUserById(Long id, String currentUserEmail) {
 
         User user = userRepository.findById(id)
@@ -182,9 +170,7 @@ public class UserService {
         return entityToDto(user);
     }
 
-    // =========================================================
-    // EXPORT USERS (ADMIN ONLY)
-    // =========================================================
+
     public List<UserExportDTO> exportUsers(String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);
@@ -205,9 +191,7 @@ public class UserService {
                 .toList();
     }
 
-    // =========================================================
-    // IMPORT USERS (ADMIN ONLY)
-    // =========================================================
+
     public Map<String, Object> importUsers(List<UserImportDTO> importList, String currentUserEmail) {
 
         User currentUser = getCurrentUser(currentUserEmail);

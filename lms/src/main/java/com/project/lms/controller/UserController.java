@@ -24,9 +24,7 @@ public class UserController {
 
     private final UserService userService;
 
-    // =========================================================
-    // GET CURRENT USER EMAIL
-    // =========================================================
+
     private String getCurrentUserEmail() {
         return SecurityContextHolder
                 .getContext()
@@ -34,9 +32,7 @@ public class UserController {
                 .getName();
     }
 
-    // =========================================================
-    // APPROVE USER
-    // =========================================================
+
     @PutMapping("/{id}/approve")
     public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long id) {
 
@@ -45,20 +41,16 @@ public class UserController {
         );
     }
 
-    // =========================================================
-    // REJECT USER
-    // =========================================================
+
     @PutMapping("/{id}/reject")
-    public ResponseEntity<Map<String, Object>> rejectUser(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> rejectUser(@Valid @PathVariable Long id) {
 
         return ResponseEntity.ok(
                 userService.rejectUser(id, getCurrentUserEmail())
         );
     }
 
-    // =========================================================
-    // LIST USERS (ADMIN ONLY)
-    // =========================================================
+
     @GetMapping
     public ResponseEntity<List<UserListResponseDTO>> listUsers() {
 
@@ -67,9 +59,7 @@ public class UserController {
         );
     }
 
-    // =========================================================
-    // GET USER BY ID
-    // =========================================================
+
     @GetMapping("/{id}")
     public ResponseEntity<UserListResponseDTO> getUserById(@PathVariable Long id) {
 
@@ -78,9 +68,7 @@ public class UserController {
         );
     }
 
-    // =========================================================
-    // ADD USER (ADMIN ONLY)
-    // =========================================================
+
     @PostMapping
     public ResponseEntity<UserListResponseDTO> addUser(
             @Valid @RequestBody AddUserRequestDTO request) {
@@ -89,9 +77,7 @@ public class UserController {
                 .body(userService.addUser(request, getCurrentUserEmail()));
     }
 
-    // =========================================================
-    // EXPORT USERS (ADMIN ONLY)
-    // =========================================================
+
     @GetMapping("/export")
     public ResponseEntity<List<UserExportDTO>> exportUsers() {
 
@@ -100,9 +86,7 @@ public class UserController {
         );
     }
 
-    // =========================================================
-    // IMPORT USERS (ADMIN ONLY)
-    // =========================================================
+
     @PostMapping("/import")
     public ResponseEntity<?> importUsers(
             @RequestBody List<UserImportDTO> importList) {

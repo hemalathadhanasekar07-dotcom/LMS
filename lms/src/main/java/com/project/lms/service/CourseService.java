@@ -4,8 +4,17 @@ import com.project.lms.dto.AddCourseDTO;
 import com.project.lms.dto.CourseExportDTO;
 import com.project.lms.entity.Course;
 import com.project.lms.entity.CourseStatus;
+import com.project.lms.entity.User;
+import com.project.lms.exception.DuplicateResourceException;
+import com.project.lms.exception.ResourceNotFoundException;
+import com.project.lms.exception.UnauthorizedActionException;
 import com.project.lms.repository.CourseRepository;
+import com.project.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,9 +23,28 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final UserRepository userRepository;
+
+
+    private Course dtoToEntity(AddCourseDTO dto) {
+
+        return Course.builder()
+                .code(dto.getCode())
+                .title(dto.getTitle())
+                .status(CourseStatus.valueOf(dto.getStatus()))
+                .createdBy(dto.getCreated_by())
+                .updatedBy(dto.getCreated_by())
+                .organizationId(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+
 
     public Object addCourse(AddCourseDTO dto) {
 
@@ -25,53 +53,91 @@ public class CourseService {
                 dto.getStatus() == null ||
                 dto.getCreated_by() == null) {
 
-            return Map.of("message",
-                    "code, title, status, and created_by are required");
+            return Map.of(
+                    "message",
+                    "COURSE_REQUIRED_FIELDS"
+            );
         }
 
         if (courseRepository.existsByCode(dto.getCode())) {
-            return Map.of("message", "Course code already exists");
+            throw new DuplicateResourceException("COURSE_CODE_EXISTS");
+        }
+         Authentication auth =SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        String userName = auth.getName();
+        User currentUser=userRepository.findByEmail(userName).orElseThrow(()->new ResourceNotFoundException("USER_NOT_FOUND"));
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().toString())){
+            throw new UnauthorizedActionException("ACCESS_DENIED");
         }
 
-        Course course = new Course();
-        course.setCode(dto.getCode());
-        course.setTitle(dto.getTitle());
-        course.setStatus(CourseStatus.valueOf(dto.getStatus()));
-        course.setCreatedBy(dto.getCreated_by());
-        course.setUpdatedBy(dto.getCreated_by());
-        course.setOrganizationId(1L); // temporary
-        course.setCreatedAt(LocalDateTime.now());
-        course.setUpdatedAt(LocalDateTime.now());
+        Course saved = courseRepository.save(dtoToEntity(dto));
 
-        return courseRepository.save(course);
+        return Map.of(
+                "id", saved.getId(),
+                "code", saved.getCode(),
+                "title", saved.getTitle(),
+                "status", saved.getStatus(),
+                "active", saved.getActive(),
+                "created_by", saved.getCreatedBy(),
+                "updated_by", saved.getUpdatedBy(),
+                "organization_id", saved.getOrganizationId(),
+                "visibility", saved.getVisibility()
+        );
     }
 
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
-    }
 
-    public Course getCourseById(Long id) {
-        return courseRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Course not found"));
-    }
-    public List<CourseExportDTO> exportCourses() {
+
+    public List<CourseExportDTO> getAllCourses() {
 
         return courseRepository.findAll()
                 .stream()
-                .map(course -> CourseExportDTO.builder()
-                        .id(course.getId())
-                        .code(course.getCode())
-                        .title(course.getTitle())
-                        .status(course.getStatus().name())
-                        .active(course.getActive())
-                        .created_at(course.getCreatedAt())
-                        .created_by(course.getCreatedBy())
-                        .updated_at(course.getUpdatedAt())
-                        .updated_by(course.getUpdatedBy())
-                        .organization_id(course.getOrganizationId())
-                        .visibility(course.getVisibility().name())
-                        .build())
+                .map(this::entityToDto)
                 .toList();
+    }
+
+
+
+    public CourseExportDTO getCourseById(Long id) {
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("COURSE_NOT_FOUND"));
+
+        return entityToDto(course);
+    }
+
+
+
+    public Map<String, Object> exportCourses() {
+
+        List<CourseExportDTO> courses = courseRepository.findAll()
+                .stream()
+                .map(this::entityToDto)
+                .toList();
+
+        return Map.of(
+                "message", "COURSES_EXPORTED_SUCCESS",
+                "data", courses
+        );
+    }
+
+
+
+    private CourseExportDTO entityToDto(Course course) {
+
+        return CourseExportDTO.builder()
+                .id(course.getId())
+                .code(course.getCode())
+                .title(course.getTitle())
+                .status(course.getStatus().name())
+                .active(course.getActive())
+                .created_at(course.getCreatedAt())
+                .created_by(course.getCreatedBy())
+                .updated_at(course.getUpdatedAt())
+                .updated_by(course.getUpdatedBy())
+                .organization_id(course.getOrganizationId())
+                .visibility(course.getVisibility().name())
+                .build();
     }
 }

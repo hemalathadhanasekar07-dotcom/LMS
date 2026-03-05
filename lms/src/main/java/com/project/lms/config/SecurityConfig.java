@@ -41,43 +41,9 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-
-                        // Public
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/organizations").authenticated()
-                        // Admin only
-                        .requestMatchers(HttpMethod.POST, "/api/users").authenticated()
-                        .requestMatchers("/api/users/*/approve").authenticated()
-                        .requestMatchers("/api/users/*/reject").authenticated()
-
-
-                        .requestMatchers(HttpMethod.GET, "/api/users")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/users/export")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/users/import")
-                        .authenticated()
-                        .requestMatchers("/api/users/*/reject")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/users/*")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/courses")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/courses/**")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/courses/*/modules")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/courses/*/modules")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/courses/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/courses/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/courses/export")
-                        .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/courses/**")
-                        .authenticated()
                         .anyRequest().authenticated()
+
 
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
