@@ -29,6 +29,7 @@ public class AuthService {
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final MailService mailService;
 
 
 
@@ -56,6 +57,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        mailService.sendUserRegistrationMail(user.getEmail(), user.getName());
 
         return Map.of(
                 "message", "REGISTRATION_SUCCESS",

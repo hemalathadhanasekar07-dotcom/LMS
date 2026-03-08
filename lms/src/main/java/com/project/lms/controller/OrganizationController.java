@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/organizations")
-@Slf4j
 public class OrganizationController {
 
     private final OrganizationService organizationService;
@@ -33,17 +33,25 @@ public class OrganizationController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createOrganization(@RequestBody OrganizationDTO dto) throws UnauthorizedActionException {
-        log.info("POST /api/organizations called with payload: {}", dto);
+    public ResponseEntity<?> createOrganization(@RequestBody OrganizationDTO dto) {
 
-        OrganizationDTO saved = organizationService.createOrganization(dto);
+        log.info("POST /api/organizations called with name={}", dto.getName());
 
-        log.info("Organization created with id={}", saved.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                Map.of(
-                        "message","Organization created successfully",
-                        "organizationid",saved.getId()
-                )
-        );
+        try {
+            OrganizationDTO saved = organizationService.createOrganization(dto);
+
+            log.info("Organization created successfully with id={}", saved.getId());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    Map.of(
+                            "message","Organization created successfully",
+                            "organizationId", saved.getId()
+                    )
+            );
+
+        } catch (Exception e) {
+            log.error("Error while creating organization", e);
+            throw e;
+        }
     }
 }

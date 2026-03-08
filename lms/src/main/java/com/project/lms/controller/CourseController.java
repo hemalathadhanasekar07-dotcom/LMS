@@ -1,6 +1,8 @@
 package com.project.lms.controller;
 
 import com.project.lms.dto.AddCourseDTO;
+import com.project.lms.dto.AddModuleDTO;
+import com.project.lms.dto.AddTopicDTO;
 import com.project.lms.service.CourseService;
 import com.project.lms.service.ModuleService;
 import com.project.lms.service.TopicService;
@@ -31,6 +33,7 @@ public class CourseController {
 
     @GetMapping
     public ResponseEntity<?> getAllCourses() {
+
         return ResponseEntity.ok(courseService.getAllCourses());
     }
 
@@ -38,13 +41,19 @@ public class CourseController {
     public ResponseEntity<?> getCourseById(@PathVariable Long id) {
         return ResponseEntity.ok(courseService.getCourseById(id));
     }
+    @PutMapping("/{id}/publish")
+    public ResponseEntity<?> publishCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(courseService.publishCourse(id));
+    }
     @PostMapping("/{courseId}/modules")
     public ResponseEntity<?> addModule(
             @PathVariable Long courseId,
-            @RequestBody Map<String, String> body) {
+            @RequestBody AddModuleDTO dto) {
+
+        dto.setCourseId(courseId);
 
         return ResponseEntity.ok(
-                moduleService.addModule(courseId, body.get("name"))
+                moduleService.addModule(dto)
         );
     }
 
@@ -58,11 +67,16 @@ public class CourseController {
     }
     @PostMapping("/{courseId}/modules/{moduleId}/topics")
     public ResponseEntity<?> addTopic(
+            @PathVariable Long courseId,
             @PathVariable Long moduleId,
-            @RequestBody Map<String, String> body) {
+            @Valid @RequestBody AddTopicDTO dto) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+
 
         return ResponseEntity.ok(
-                topicService.addTopic(moduleId, body.get("name"))
+                topicService.addTopic(moduleId,dto)
         );
     }
 
@@ -78,6 +92,9 @@ public class CourseController {
     @DeleteMapping("/{courseId}/modules/{moduleId}/topics/{topicId}")
     public ResponseEntity<?> deleteTopic(
             @PathVariable Long topicId) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
 
         return ResponseEntity.ok(
                 topicService.deleteTopic(topicId)

@@ -25,7 +25,7 @@ public class Course {
 
     @Enumerated(EnumType.STRING)
     private CourseStatus status;
-
+    @Builder.Default
     private Boolean active = true;
 
     private Long createdBy;
@@ -33,6 +33,7 @@ public class Course {
     private Long organizationId;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private Visibility visibility = Visibility.PRIVATE;
 
     private LocalDateTime createdAt;

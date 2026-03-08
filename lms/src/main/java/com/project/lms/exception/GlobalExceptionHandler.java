@@ -119,4 +119,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", message));
     }
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+//
+//        String messageKey = ex.getBindingResult()
+//                .getFieldErrors()
+//                .get(0)
+//                .getDefaultMessage();
+//
+//        String message = resolveMessage(messageKey);
+//
+//        return ResponseEntity.badRequest()
+//                .body(Map.of("message", message));
+//    }
 }

@@ -1,8 +1,7 @@
 package com.project.lms.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +14,9 @@ import java.time.LocalDateTime;
 )
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Module {
 
     @Id
@@ -25,7 +27,7 @@ public class Module {
 
     private String name;
 
-    private Integer moduleOrder = 0;
+    private Integer moduleOrder;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -1,5 +1,6 @@
 package com.project.lms.dto;
 
+import com.project.lms.entity.CourseStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,8 +14,8 @@ public class AddCourseDTO {
     @NotBlank(message = "COURSE_TITLE_REQUIRED")
     private String title;
 
-    @NotBlank(message = "COURSE_STATUS_REQUIRED")
-    private String status;
+    @NotNull(message = "COURSE_STATUS_REQUIRED")
+    private CourseStatus status;
 
     @NotNull(message = "COURSE_CREATED_BY_REQUIRED")
     private Long created_by;
