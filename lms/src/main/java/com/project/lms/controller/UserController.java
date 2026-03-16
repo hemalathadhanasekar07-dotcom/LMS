@@ -24,7 +24,6 @@ public class UserController {
 
     private final UserService userService;
 
-
     private String getCurrentUserEmail() {
         return SecurityContextHolder
                 .getContext()
@@ -32,67 +31,76 @@ public class UserController {
                 .getName();
     }
 
-
     @PutMapping("/{id}/approve")
     public ResponseEntity<Map<String, Object>> approveUser(@PathVariable Long id) {
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → Approve user | Admin: {} | Target User ID: {}", admin, id);
 
         return ResponseEntity.ok(
-                userService.approveUser(id, getCurrentUserEmail())
+                userService.approveUser(id, admin)
         );
     }
-
 
     @PutMapping("/{id}/reject")
-    public ResponseEntity<Map<String, Object>> rejectUser(@Valid @PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> rejectUser(@PathVariable Long id) {
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → Reject user | Admin: {} | Target User ID: {}", admin, id);
 
         return ResponseEntity.ok(
-                userService.rejectUser(id, getCurrentUserEmail())
+                userService.rejectUser(id, admin)
         );
     }
-
 
     @GetMapping
     public ResponseEntity<List<UserListResponseDTO>> listUsers() {
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → List users | Requested by: {}", admin);
 
         return ResponseEntity.ok(
-                userService.listUsers(getCurrentUserEmail())
+                userService.listUsers(admin)
         );
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<UserListResponseDTO> getUserById(@PathVariable Long id) {
+        String requester = getCurrentUserEmail();
+        log.info("API CALL → Get user by ID | Requested by: {} | User ID: {}", requester, id);
 
         return ResponseEntity.ok(
-                userService.getUserById(id, getCurrentUserEmail())
+                userService.getUserById(id, requester)
         );
     }
-
 
     @PostMapping
     public ResponseEntity<UserListResponseDTO> addUser(
             @Valid @RequestBody AddUserRequestDTO request) {
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.addUser(request, getCurrentUserEmail()));
-    }
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → Add user | Admin: {} | Email: {}", admin, request.getEmail());
 
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.addUser(request, admin));
+    }
 
     @GetMapping("/export")
     public ResponseEntity<List<UserExportDTO>> exportUsers() {
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → Export users | Admin: {}", admin);
 
         return ResponseEntity.ok(
-                userService.exportUsers(getCurrentUserEmail())
+                userService.exportUsers(admin)
         );
     }
-
 
     @PostMapping("/import")
     public ResponseEntity<?> importUsers(
             @RequestBody List<UserImportDTO> importList) {
 
+        String admin = getCurrentUserEmail();
+        log.info("API CALL → Import users | Admin: {} | Records: {}", admin, importList.size());
+
         return ResponseEntity.ok(
-                userService.importUsers(importList, getCurrentUserEmail())
+                userService.importUsers(importList, admin)
         );
     }
 }

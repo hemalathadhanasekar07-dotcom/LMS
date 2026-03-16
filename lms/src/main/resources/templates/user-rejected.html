@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Registration Received</title>
+    <title>Registration Update</title>
 </head>
 
 <body style="margin:0; padding:0; background-color:#f5f7fb; font-family: Arial, Helvetica, sans-serif;">
@@ -14,10 +14,8 @@
 
     <!-- Header -->
     <tr>
-        <td style="background:#1a73e8; padding:32px; text-align:center;">
-            <h1 style="color:#ffffff; margin:0; font-size:24px;">
-                Registration Successful
-            </h1>
+        <td style="background:#1a73e8; padding:30px; text-align:center;">
+            <h1 style="color:#ffffff; margin:0;">Registration Update</h1>
         </td>
     </tr>
 
@@ -25,25 +23,22 @@
     <tr>
         <td style="padding:40px 36px; color:#333333; font-size:16px; line-height:1.7;">
 
-            <p style="margin-top:0;">
-                Dear <b th:text="${name}">User</b>,
+            <p>Dear <b th:text="${name}">User</b>,</p>
+
+            <p>
+                Thank you for registering with our Learning Management System.
             </p>
 
             <p>
-                Welcome to the LMS!
-                Your account has been successfully registered and waiting for approval. Once you have been approved, start exploring LMS!</p>
+                After careful review, we regret to inform you that your account
+                request has not been approved at this time.
+            </p>
 
-            <div style="background:#fff4e5; border-left:5px solid #f59e0b;
+            <div style="background:#eef4ff; border-left:5px solid #1a73e8;
                         padding:18px 20px; border-radius:6px; margin:28px 0;">
-                <b style="color:#b45309;">Account Status: Pending Approval</b>
-                <p style="margin:8px 0 0 0;">
-                    You will be notified by email once your account has been approved.
-                </p>
+                If you believe this decision was made in error or require further
+                clarification, please contact the system administrator.
             </div>
-
-            <p>
-                If you did not initiate this registration, please ignore this email.
-            </p>
 
             <p style="margin-top:32px;">
                 Sincerely,<br>
@@ -58,7 +53,7 @@
         <td style="background:#f2f2f2; padding:18px; text-align:center;
                    font-size:12px; color:#666;">
             © 2026 Learning Management System. All rights reserved.<br>
-            This is an automated service email. Please do not reply.
+            This is an automated service email.
         </td>
     </tr>
 

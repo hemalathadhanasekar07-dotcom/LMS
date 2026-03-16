@@ -31,20 +31,26 @@ public class AuthService {
     private final JwtService jwtService;
     private final MailService mailService;
 
-
-
     public Map<String, Object> register(RegisterDTO request) {
+        log.info("Registration attempt for email: {}", request.getEmail());
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            log.warn("Registration failed — email already exists: {}", request.getEmail());
             throw new DuplicateResourceException("EMAIL_ALREADY_EXISTS");
         }
 
         Role role = roleRepository.findByName("USER")
-                .orElseThrow(() -> new ResourceNotFoundException("USER_ROLE_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.error("Default USER role not found during registration");
+                    return new ResourceNotFoundException("USER_ROLE_NOT_FOUND");
+                });
 
         Organization organization = organizationRepository
                 .findById(request.getOrganizationId())
-                .orElseThrow(() -> new ResourceNotFoundException("ORG_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.error("Organization not found during registration: {}", request.getOrganizationId());
+                    return new ResourceNotFoundException("ORG_NOT_FOUND");
+                });
 
         User user = User.builder()
                 .name(request.getName())
@@ -57,7 +63,10 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        log.info("User registered successfully with ID: {}", user.getId());
+
         mailService.sendUserRegistrationMail(user.getEmail(), user.getName());
+        log.info("Registration email sent to: {}", user.getEmail());
 
         return Map.of(
                 "message", "REGISTRATION_SUCCESS",
@@ -65,30 +74,37 @@ public class AuthService {
         );
     }
 
-
-
     public Map<String, Object> login(LoginRequestDTO request) {
+        log.info("Login attempt for email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialsException("INVALID_CREDENTIALS"));
+                .orElseThrow(() -> {
+                    log.warn("Login failed — invalid email: {}", request.getEmail());
+                    return new InvalidCredentialsException("INVALID_CREDENTIALS");
+                });
 
         if (!user.getOrganization().getId().equals(request.getOrganizationId())) {
+            log.warn("Login failed — invalid organization for user: {}", request.getEmail());
             throw new InvalidCredentialsException("INVALID_ORGANIZATION");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.warn("Login failed — incorrect password for user: {}", request.getEmail());
             throw new InvalidCredentialsException("INVALID_CREDENTIALS");
         }
 
         if (user.getStatus() == UserStatus.PENDING) {
+            log.warn("Login blocked — account pending approval: {}", request.getEmail());
             throw new AccountStatusException("ACCOUNT_PENDING", "ACCOUNT_PENDING");
         }
 
         if (user.getStatus() == UserStatus.REJECTED) {
+            log.warn("Login blocked — account rejected: {}", request.getEmail());
             throw new AccountStatusException("ACCOUNT_REJECTED", "ACCOUNT_REJECTED");
         }
 
         String token = jwtService.generateToken(user);
+        log.info("Login successful for user ID: {}", user.getId());
 
         UserResponseDTO responseDTO = UserResponseDTO.builder()
                 .id(user.getId())

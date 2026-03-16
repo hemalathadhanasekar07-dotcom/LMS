@@ -3,8 +3,10 @@ package com.project.lms.security;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,6 +19,7 @@ import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -27,20 +30,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+        String ip = request.getRemoteAddr();
+
         String authHeader = request.getHeader("Authorization");
 
-        // If no token → continue filter chain
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.debug("No JWT token found | IP: {} | Method: {} | Path: {}", ip, method, path);
             filterChain.doFilter(request, response);
-            return ;
+            return;
         }
 
         String token = authHeader.substring(7);
-       System.out.println("Request: " + request.getMethod() + " " + request.getRequestURI());
-        System.out.println("Authorization Header: " + request.getHeader("Authorization"));
 
         try {
-
             Claims claims = jwtService.extractAllClaims(token);
 
             String email = claims.getSubject();
@@ -55,15 +60,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             )
                     );
 
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-
+            log.debug("JWT authentication successful | User: {} | Role: {} | Path: {}",
+                    email, role, path);
 
         } catch (Exception e) {
-            // Invalid token → do nothing, Spring will handle 401
+            log.warn("Invalid JWT token | IP: {} | Method: {} | Path: {} | Reason: {}",
+                    ip, method, path, e.getMessage());
+
         }
 
         filterChain.doFilter(request, response);
     }
-
 }

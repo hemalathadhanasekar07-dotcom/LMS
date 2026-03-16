@@ -31,8 +31,8 @@ public class CourseService {
     private final UserRepository userRepository;
     private final MailService mailService;
 
-
     private Course dtoToEntity(AddCourseDTO dto) {
+        log.debug("Converting AddCourseDTO to Course entity with code: {}", dto.getCode());
 
         return Course.builder()
                 .code(dto.getCode())
@@ -48,17 +48,22 @@ public class CourseService {
                 .build();
     }
 
-
-
     public Object addCourse(AddCourseDTO dto) {
-        System.out.println("DTO STATUS = " + dto.getStatus());
-        Authentication auth =SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+        log.info("Course creation attempt for code: {}", dto.getCode());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userName = auth.getName();
-        User currentUser=userRepository.findByEmail(userName).orElseThrow(()->new ResourceNotFoundException("USER_NOT_FOUND"));
-        System.out.println(currentUser.getRole().getName());
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().getName())){
+
+        User currentUser = userRepository.findByEmail(userName)
+                .orElseThrow(() -> {
+                    log.error("Logged-in user not found: {}", userName);
+                    return new ResourceNotFoundException("USER_NOT_FOUND");
+                });
+
+        log.debug("Course creation requested by user: {} with role: {}", currentUser.getEmail(), currentUser.getRole().getName());
+
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().getName())) {
+            log.warn("Unauthorized course creation attempt by user: {}", currentUser.getEmail());
             throw new UnauthorizedActionException("ACCESS_DENIED");
         }
 
@@ -67,18 +72,32 @@ public class CourseService {
                 dto.getStatus() == null ||
                 dto.getCreated_by() == null) {
 
-            return Map.of(
-                    "message",
-                    "COURSE_REQUIRED_FIELDS"
-            );
+            log.warn("Course creation failed — missing required fields");
+            return Map.of("message", "COURSE_REQUIRED_FIELDS");
         }
 
         if (courseRepository.existsByCode(dto.getCode())) {
+            log.warn("Course creation failed — duplicate course code: {}", dto.getCode());
             throw new DuplicateResourceException("COURSE_CODE_EXISTS");
         }
 
-
         Course saved = courseRepository.save(dtoToEntity(dto));
+        log.info("Course created successfully with ID: {}", saved.getId());
+
+        if (saved.getStatus() == CourseStatus.PUBLISHED) {
+
+            List<User> students = userRepository.findAll();
+
+            for (User student : students) {
+                mailService.sendCoursePublishedMail(
+                        student.getEmail(),
+                        student.getName(),
+                        saved.getTitle()
+                );
+            }
+
+            System.out.println("Course publish emails sent");
+        }
 
         return Map.of(
                 "id", saved.getId(),
@@ -91,40 +110,46 @@ public class CourseService {
                 "organization_id", saved.getOrganizationId(),
                 "visibility", saved.getVisibility()
         );
-
     }
 
-
-
     public List<CourseExportDTO> getAllCourses() {
+        log.info("Fetching all courses");
 
-        return courseRepository.findAll()
+        List<CourseExportDTO> list = courseRepository.findAll()
                 .stream()
                 .map(this::entityToDto)
                 .toList();
+
+        log.info("Total courses fetched: {}", list.size());
+        return list;
     }
 
-
-
     public CourseExportDTO getCourseById(Long id) {
+        log.debug("Fetching course by ID: {}", id);
 
         Course course = courseRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("COURSE_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.error("Course not found: {}", id);
+                    return new ResourceNotFoundException("COURSE_NOT_FOUND");
+                });
 
         return entityToDto(course);
     }
 
-
-
     public Map<String, Object> exportCourses() {
-        Authentication auth =SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-        String userName = auth.getName();
-        User currentUser=userRepository.findByEmail(userName).orElseThrow(()->new ResourceNotFoundException("USER_NOT_FOUND"));
+        log.info("Course export requested");
 
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().getName())){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userName = auth.getName();
+
+        User currentUser = userRepository.findByEmail(userName)
+                .orElseThrow(() -> {
+                    log.error("Logged-in user not found: {}", userName);
+                    return new ResourceNotFoundException("USER_NOT_FOUND");
+                });
+
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole().getName())) {
+            log.warn("Unauthorized course export attempt by user: {}", currentUser.getEmail());
             throw new UnauthorizedActionException("ACCESS_DENIED");
         }
 
@@ -133,18 +158,25 @@ public class CourseService {
                 .map(this::entityToDto)
                 .toList();
 
+        log.info("Courses exported successfully. Count: {}", courses.size());
+
         return Map.of(
                 "message", "COURSES_EXPORTED_SUCCESS",
                 "data", courses
         );
     }
+
     public Map<String, String> publishCourse(Long id) {
-        //any one can do,,,later change it
+        log.info("Publishing course ID: {}", id);
 
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("COURSE_NOT_FOUND"));
+                .orElseThrow(() -> {
+                    log.error("Course not found for publishing: {}", id);
+                    return new ResourceNotFoundException("COURSE_NOT_FOUND");
+                });
 
         if (course.getStatus() == CourseStatus.PUBLISHED) {
+            log.warn("Course already published: {}", id);
             throw new IllegalStateException("COURSE_ALREADY_PUBLISHED");
         }
 
@@ -152,18 +184,25 @@ public class CourseService {
         course.setUpdatedAt(LocalDateTime.now());
         courseRepository.save(course);
 
-        User creator = userRepository.findById(course.getCreatedBy())
-                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));
+        log.info("Course published successfully: {}", id);
 
-        mailService.sendCoursePublishedMail(creator.getEmail(), course.getTitle());
+        User creator = userRepository.findById(course.getCreatedBy())
+                .orElseThrow(() -> {
+                    log.error("Course creator not found: {}", course.getCreatedBy());
+                    return new ResourceNotFoundException("USER_NOT_FOUND");
+                });
+
+        mailService.sendCoursePublishedMail(
+                creator.getEmail(),
+                creator.getName(),
+                course.getTitle()
+        );
+        log.info("Course publication email sent to: {}", creator.getEmail());
 
         return Map.of("message", "COURSE_PUBLISHED_SUCCESS");
     }
 
-
-
     private CourseExportDTO entityToDto(Course course) {
-
         return CourseExportDTO.builder()
                 .id(course.getId())
                 .code(course.getCode())

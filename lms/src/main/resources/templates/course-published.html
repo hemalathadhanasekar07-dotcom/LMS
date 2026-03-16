@@ -1,11 +1,72 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Course Published</title>
+    <meta charset="UTF-8">
+    <title>New Course Available</title>
 </head>
-<body>
-<h2>New Course Published 🚀</h2>
-<p>The course <b th:text="${courseTitle}"></b> is now available.</p>
-<p>Login and start learning today!</p>
+
+<body style="margin:0; padding:0; background-color:#f5f7fb; font-family: Arial, Helvetica, sans-serif;">
+
+<table align="center" width="100%" cellpadding="0" cellspacing="0"
+       style="max-width:640px; margin:auto; background:#ffffff;
+              border-radius:10px; overflow:hidden;
+              box-shadow:0 3px 12px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <tr>
+        <td style="background:#0b57d0; padding:30px; text-align:center;">
+            <h1 style="color:#ffffff; margin:0; font-size:24px;">
+                New Course Published
+            </h1>
+        </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+        <td style="padding:40px 36px; color:#333333; font-size:16px; line-height:1.7;">
+
+            <p style="margin-top:0;">
+                Dear Learner,
+            </p>
+
+            <p>
+                We are pleased to inform you that a new course has been added to the Learning Management System.
+            </p>
+
+            <div style="background:#eef4ff; border-left:5px solid #0b57d0;
+                        padding:18px 20px; border-radius:6px; margin:28px 0;">
+                <b style="color:#0b57d0;">Course Title:</b>
+                <p style="margin:8px 0 0 0; font-size:17px;">
+                    <b th:text="${courseTitle}">Course Name</b>
+                </p>
+            </div>
+
+            <p>
+                You can now access this course from your dashboard and begin learning at your convenience.
+            </p>
+
+            <p>
+                We encourage you to explore the course materials and continue enhancing your skills.
+            </p>
+
+            <p style="margin-top:32px;">
+                Best regards,<br>
+                <b>LMS Academic Team</b>
+            </p>
+
+        </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+        <td style="background:#f2f2f2; padding:18px; text-align:center;
+                   font-size:12px; color:#666;">
+            © 2026 Learning Management System. All rights reserved.<br>
+            This is an automated notification email.
+        </td>
+    </tr>
+
+</table>
+
 </body>
 </html>
